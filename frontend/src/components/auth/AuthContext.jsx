@@ -5,7 +5,7 @@ import axios from "axios";
 
 export const AuthContext = createContext();
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+const BASE_URL = "http://localhost:3000";
 // const navigate = useNavigate();
 
 export const fetchProblemsFromExpiredContests = async () => {

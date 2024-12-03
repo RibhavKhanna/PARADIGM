@@ -17,10 +17,12 @@ const executeJavaForRun = require("./src/executeJavaForRun");
 const executeJava = require("./src/executeJava");
 const { log } = require('console');
 const fs = require("fs");
-const AWS = require('aws-sdk');
+// const AWS = require('aws-sdk');
 const multer = require('multer');
-const multerS3 = require('multer-s3');
+// const multerS3 = require('multer-s3');
 const { promisify } = require('util');
+const { console } = require('inspector');
+const { stdout } = require('process');
 
 // Load environment variables from .env file
 require('dotenv').config();
@@ -31,44 +33,71 @@ const app = express();
 // Middlewares
 app.use(express.json());
 app.use(cors({
-    origin: 'https://www.cppjudge.in', // Replace with your frontend URL
+    origin: ' http://127.0.0.1:5173', // Replace with your frontend URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true  // Allow credentials (cookies)
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Configure AWS SDK with your credentials and region
-const s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION
-});
+// // Configure AWS SDK with your credentials and region
+// const s3 = new AWS.S3({
+//     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+//     region: process.env.AWS_REGION
+// });
 
-// Multer configuration for S3 storage
-const upload = multer({
-    storage: multerS3({
-        s3: s3,
-        bucket: process.env.AWS_BUCKET_NAME,
-        acl: 'public-read',
-        key: function (req, file, cb) {
-            let folder = 'uploads/';
-            if (file.fieldname === 'profilePhoto') {
-                folder += 'images/profiles/';
-            } else if (file.fieldname === 'contestImage') {
-                folder += 'images/contests/';
-            } else if (file.fieldname.startsWith('images')) {
-                folder += 'images/contests/problemImages/';
-            } else if (file.fieldname.startsWith('inputFile') || file.fieldname.startsWith('outputFile')) {
-                folder += 'testcases/';
-            }
-            const filename = Date.now() + '-' + file.originalname;
-            cb(null, folder + filename);
+// // Multer configuration for S3 storage
+// const upload = multer({
+//     storage: multerS3({
+//         s3: s3,
+//         bucket: process.env.AWS_BUCKET_NAME,
+//         acl: 'public-read',
+//         key: function (req, file, cb) {
+//             let folder = 'uploads/';
+//             if (file.fieldname === 'profilePhoto') {
+//                 folder += 'images/profiles/';
+//             } else if (file.fieldname === 'contestImage') {
+//                 folder += 'images/contests/';
+//             } else if (file.fieldname.startsWith('images')) {
+//                 folder += 'images/contests/problemImages/';
+//             } else if (file.fieldname.startsWith('inputFile') || file.fieldname.startsWith('outputFile')) {
+//                 folder += 'testcases/';
+//             }
+//             const filename = Date.now() + '-' + file.originalname;
+//             cb(null, folder + filename);
+//         }
+//     })
+// });
+
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        let folder = 'src/uploads/';
+        if (file.fieldname === 'profilePhoto') {
+            folder += 'images/profiles/';
+        } else if (file.fieldname === 'contestImage') {
+            folder += 'images/contests/';
+        } else if (file.fieldname.startsWith('images')) {
+            folder += 'images/contests/problemImages/';
+        } else if (file.fieldname.startsWith('inputFile') || file.fieldname.startsWith('outputFile')) {
+            folder += 'testcases/';
         }
-    })
+        cb(null, folder);
+    },
+    filename: function (req, file, cb) {
+        const filename = Date.now() + '-' + file.originalname;
+        // const filename = file.originalname;
+        cb(null, filename);
+    }
 });
 
-// Middleware to serve static files from S3
-app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
+const upload = multer({ storage });
+
+// // Middleware to serve static files from S3
+// app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Example route to handle submission
 // Function to normalize newlines
@@ -108,15 +137,16 @@ app.post("/submit", async (req, res) => {
         const inputFilePath = normalizeFilePath(ipath);
         const outputFilePath = normalizeFilePath(opath);
 
-        // Read input file directly from S3
-        const inputParams = {
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: inputFilePath
-        };
-        const inputText = await s3.getObject(inputParams).promise()
-            .then(data => data.Body.toString('utf-8'));
+        // // Read input file directly from S3
+        // const inputParams = {
+        //     Bucket: process.env.AWS_BUCKET_NAME,
+        //     Key: inputFilePath
+        // };
+        // const inputText = await s3.getObject(inputParams).promise()
+        //     .then(data => data.Body.toString('utf-8'));
 
         // Write inputText to a temporary file
+        const inputText = await fs.readFile(inputFilePath, 'utf-8');
         const tempInputFilePath = await writeTempFile(inputText);
 
         // Execute code based on language
@@ -127,13 +157,13 @@ app.post("/submit", async (req, res) => {
         else return res.status(500).json({ success: false, message: "Unexpected language selected" });
 
         // Read expected output file directly from S3
-        const outputParams = {
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: outputFilePath
-        };
-        const expectedOutput = await s3.getObject(outputParams).promise()
-            .then(data => data.Body.toString('utf-8'));
-
+        // const outputParams = {
+        //     Bucket: process.env.AWS_BUCKET_NAME,
+        //     Key: outputFilePath
+        // };
+        // const expectedOutput = await s3.getObject(outputParams).promise()
+        //     .then(data => data.Body.toString('utf-8'));
+        const expectedOutput = await fs.readFile(outputFilePath, 'utf-8');
         const normalizedOutput = normalizeNewlines(output.trim());
 
         let submissionResult, message;
@@ -219,7 +249,6 @@ app.post("/submit", async (req, res) => {
 // Example route to create contest with files
 app.post('/create', upload.any(), async (req, res) => {
     const { useremail, contestName, duration, startTime, endTime } = req.body;
-
     try {
         let problems = req.body.problems;
         if (typeof problems === 'string') {
@@ -229,17 +258,18 @@ app.post('/create', upload.any(), async (req, res) => {
         problems = problems.map((problem, index) => {
             const images = req.files
                 .filter(file => file.fieldname.startsWith(`images-${index}`))
-                .map(file => path.join('uploads/images/contests/problemImages', path.basename(file.key)));
+                .map(file => path.join('uploads/images/contests/problemImages', file.filename));
 
-            return {
-                ...problem,
-                inputFile: path.join('uploads', path.basename(req.files.find(file => file.fieldname === `problems[${index}][inputFile]`)?.key || '')),
-                outputFile: path.join('uploads', path.basename(req.files.find(file => file.fieldname === `problems[${index}][outputFile]`)?.key || '')),
-                images
-            };
+                return {
+                    ...problem,
+                    inputFile: path.join('uploads', req.files.find(file => file.fieldname === `problems[${index}][inputFile]`)?.filename || ''),
+                    outputFile: path.join('uploads', req.files.find(file => file.fieldname === `problems[${index}][outputFile]`)?.filename || ''),
+                    images
+                };
         });
 
         const contestImage = path.join('uploads/images/contests', path.basename(req.files.find(file => file.fieldname === 'contestImage')?.key || ''));
+        // const contestImage = path.join('uploads/images/contests', req.file.filename);
 
         let user = await User.findOne({ email: useremail });
         if (!user) {
@@ -264,7 +294,7 @@ app.post('/create', upload.any(), async (req, res) => {
         res.status(201).json({ message: 'Contest created successfully!', contest: savedContest });
     } catch (error) {
         console.error('Error creating contest:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ message: 'Internal Server Error' + error});
     }
 });
 
@@ -300,6 +330,7 @@ app.get('/', (req, res) => {
 
 app.post('/register', async (req, res) => {
     try {
+        console.log("comming");
         // get data from request body
         const { username, email, password, adminRole } = req.body;
 
