@@ -24,7 +24,15 @@ const generateFile = (language, code) => {
     }
     const filePath = path.join(codeDir, fileName);
     console.log(jobID);
-    fs.writeFileSync(filePath, code);
+    try {
+        fs.writeFileSync(filePath, code);
+        console.log("File written successfully");
+        if(fs.existsSync(filePath)){
+            console.log(filePath);
+        }
+    } catch (error) {
+        console.error("Error writing file:", error);
+    }
     console.log("written");
     return filePath;
 };

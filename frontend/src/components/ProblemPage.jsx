@@ -4,12 +4,17 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { AuthContext, fetchContestById } from "./auth/AuthContext";
 import CodeModal from "./CodeModal";
+import RunResultsModal from "./RunResultsModal";
+
+
 
 const ProblemPage = () => {
   const { contestId, index } = useParams();
   const [activeTab, setActiveTab] = useState("description");
   const [output, setOutput] = useState("");
   const [language, setLanguage] = useState("cpp");
+  const [results, setResults] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [code, setCode] = useState(`#include <bits/stdc++.h>
 using namespace std;
 #define ll long long int
@@ -64,11 +69,27 @@ int main()
         code,
         pretestIp,
       });
+      console.log(response.data);
 
       if (response.data.code) {
         setOutput(response.data.error);
       } else {
         setOutput(response.data.output);
+        // Check if the output matches the expected output
+        const expectedOutput = prob.expectedOutput;
+        const isCorrect = actualOutput === expectedOutput;
+
+        // Create an array with the single test case result
+        const results = [
+            {
+                input: pretestIp,  // The input used for the test case
+                expectedOutput,
+                actualOutput,
+                isCorrect,
+            },
+        ];
+        setResults(results);
+        setIsModalOpen(true);
       }
     } catch (error) {
       const parsedErr = JSON.parse(error.request.response);
@@ -310,6 +331,12 @@ int main()
           >
             Submit
           </button>
+          {/* {isModalOpen && (
+                <RunResultsModal
+                    results={results}
+                    onClose={() => setIsModalOpen(false)}
+                />
+            )} */}
         </div>
         <div className="mt-2">
           <h3 className="text-lg font-bold">Output</h3>
