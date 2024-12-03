@@ -96,7 +96,7 @@ const upload = multer({ storage });
 
 // // Middleware to serve static files from S3
 // app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
 
 
 // Example route to handle submission
@@ -146,7 +146,7 @@ app.post("/submit", async (req, res) => {
         //     .then(data => data.Body.toString('utf-8'));
 
         // Write inputText to a temporary file
-        const inputText = await fs.readFile(inputFilePath, 'utf-8');
+        const inputText = await fs.promises.readFile(inputFilePath, 'utf-8');
         const tempInputFilePath = await writeTempFile(inputText);
 
         // Execute code based on language
@@ -163,7 +163,7 @@ app.post("/submit", async (req, res) => {
         // };
         // const expectedOutput = await s3.getObject(outputParams).promise()
         //     .then(data => data.Body.toString('utf-8'));
-        const expectedOutput = await fs.readFile(outputFilePath, 'utf-8');
+        const expectedOutput = await fs.promises.readFile(outputFilePath, 'utf-8');
         const normalizedOutput = normalizeNewlines(output.trim());
 
         let submissionResult, message;
@@ -258,17 +258,17 @@ app.post('/create', upload.any(), async (req, res) => {
         problems = problems.map((problem, index) => {
             const images = req.files
                 .filter(file => file.fieldname.startsWith(`images-${index}`))
-                .map(file => path.join('uploads/images/contests/problemImages', file.filename));
+                .map(file => path.join('src/uploads/images/contests/problemImages', file.filename));
 
                 return {
                     ...problem,
-                    inputFile: path.join('uploads', req.files.find(file => file.fieldname === `problems[${index}][inputFile]`)?.filename || ''),
-                    outputFile: path.join('uploads', req.files.find(file => file.fieldname === `problems[${index}][outputFile]`)?.filename || ''),
+                    inputFile: path.join('src/uploads', req.files.find(file => file.fieldname === `problems[${index}][inputFile]`)?.filename || ''),
+                    outputFile: path.join('src/uploads', req.files.find(file => file.fieldname === `problems[${index}][outputFile]`)?.filename || ''),
                     images
                 };
         });
 
-        const contestImage = path.join('uploads/images/contests', path.basename(req.files.find(file => file.fieldname === 'contestImage')?.key || ''));
+        const contestImage = path.join('src/uploads/images/contests', path.basename(req.files.find(file => file.fieldname === 'contestImage')?.key || ''));
         // const contestImage = path.join('uploads/images/contests', req.file.filename);
 
         let user = await User.findOne({ email: useremail });

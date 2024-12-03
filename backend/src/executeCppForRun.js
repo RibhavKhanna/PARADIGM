@@ -4,6 +4,13 @@ const path = require("path");
 
 const executeCppForRun = (filePath, pretestInput) => {
     const exePath = filePath.replace(".cpp", ".exe");
+    fs.copyFile(filePath, exePath, (err) => {
+        if (err) {
+            console.error('Error copying file:', err);
+            return;
+        }
+        console.log('File copied successfully!');
+    });
     const tempInputFilePath = `${filePath}_input.txt`;
 
     return new Promise((resolve, reject) => {

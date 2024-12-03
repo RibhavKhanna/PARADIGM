@@ -9,6 +9,15 @@ if (!fs.existsSync(outputPath)) {
     fs.mkdirSync(outputPath, { recursive: true });
 }
 
+// Cleanup function
+const cleanupFiles = (files) => {
+    files.forEach(file => {
+        fs.unlink(file, (err) => {
+            if (err) console.error(`Error deleting file ${file}:`, err);
+        });
+    });
+};
+
 const executeCpp = (filePath, inputFilePath) => {
     console.log(filePath);
     const jobId = path.basename(filePath).split(".")[0];
@@ -39,15 +48,11 @@ const executeCpp = (filePath, inputFilePath) => {
                     }
 
                     // Execute the compiled code with input
-                    const command = `cd ${outputPath} && ./${fileName} < ${tempInputFilePath}`;
+                    const command = `cd ${outputPath} && ${outputPath}/${fileName} < ${tempInputFilePath}`;
                     console.log("command: ", command);
                     exec(command, (runError, runStdout, runStderr) => {
                         // Cleanup temporary input file
-                        fs.unlink(tempInputFilePath, (unlinkError) => {
-                            if (unlinkError) {
-                                console.error("Error cleaning up temp input file:", unlinkError);
-                            }
-                        });
+                        cleanupFiles([tempInputFilePath, outFilePath]);
 
                         if (runError) {
                             return reject(runError);
