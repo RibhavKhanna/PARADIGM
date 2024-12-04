@@ -39,8 +39,8 @@ const Home = () => {
         setContests([...pastContests, ...currentAndUpcomingContests]);
         //preloader
         setTimeout(() => {
-          setShowPreloader(false); // Hide the preloader after 1.3 seconds
-        }, 1300);
+          setShowPreloader(false); // Hide the preloader after 1 seconds
+        }, 1000);
       } catch (error) {
         console.error("Error fetching contests:", error);
       }
@@ -154,19 +154,16 @@ const Home = () => {
                   </div>
 
                   <div className="p-4">
-                    {contests.map((contest) => (
+                    {contests.reverse().map((contest) => (
                       <div
                         key={contest._id}
                         className="mb-4 rounded-md shadow-none transition-shadow duration-300 cursor-pointer hover:shadow-lg hover:shadow-red-400 bg-transparent p-4 rounded-md shadow-sm transition duration-300 hover:shadow-lg floating"
                       >
-                        <h4 className="text-md font-semibold mb-2 text-white ">
+                        <h3 className="text-md font-bold mb-2 text-white ">
                           {contest.contestName}
-                        </h4>
+                        </h3>
                         <img
-                          src={`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${contest.photo.replace(
-                            /\\/g,
-                            "/"
-                          )}`}
+                          src={`https://2022.codeavour.org/wp-content/uploads/2022/08/Codeavour-2022-MainInternal.png`}
                           alt={contest.contestName}
                           className="mb-2 rounded-md shadow-sm w-full h-auto max-h-64 object-fill"
                         />

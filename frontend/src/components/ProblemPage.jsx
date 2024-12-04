@@ -188,20 +188,24 @@ int main()
         </div>
         <div className={activeTab === "description" ? "block" : "hidden"}>
           <h2 className="text-xl font-bold mb-2">{prob.name}</h2>
-          <h2 className="text-xl font-bold mb-2">Problem Description</h2>
+          <h3 className="text-xl font-bold mb-2">Problem Description</h3>
           <p style={{ whiteSpace: "pre-line" }}>{prob.description}</p>
+          <h3 className="text-xl font-bold mb-2">Test Cases</h3>
+          <h4 className="text-l font-bold mb-2">Sample Input</h4>
+          <p style={{ whiteSpace: "pre-line" }}>{prob.testCases}</p>
+          <h4 className="text-l font-bold mb-2">Sample Output</h4>
+          <p style={{ whiteSpace: "pre-line" }}>{prob.expectedOutputs}</p>
+          <h3 className="text-xl font-bold mb-2">Constraints</h3>
+          <p>Time limit : 1 second</p>
 
           {images.length > 0 && (
             <div className="mb-4">
-              <h3 className="text-xl font-bold mb-2">Images</h3>
+              {/* <h3 className="text-l font-bold mb-2">Images</h3> */}
               {images.map((image, idx) => {
                 return (
                   <img
                     key={idx}
-                    src={`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${image.replace(
-                      /\\/g,
-                      "/"
-                    )}`}
+                    src="/assets/problemImage.png"
                     alt={`Problem Image ${idx + 1}`}
                     className="mb-2"
                     style={{ maxWidth: "100%", maxHeight: "400px" }}
@@ -211,13 +215,6 @@ int main()
             </div>
           )}
 
-          <h3 className="text-xl font-bold mb-2">Test Cases</h3>
-          <h4 className="text-xl font-bold mb-2">Sample Input</h4>
-          <p style={{ whiteSpace: "pre-line" }}>{prob.testCases}</p>
-          <h4 className="text-xl font-bold mb-2">Sample Output</h4>
-          <p style={{ whiteSpace: "pre-line" }}>{prob.expectedOutputs}</p>
-          <h3 className="text-xl font-bold mb-2">Constraints</h3>
-          <p>Time limit : 1 second</p>
         </div>
 
         <div className={activeTab === "submissions" ? "block" : "hidden"}>

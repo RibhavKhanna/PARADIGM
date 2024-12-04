@@ -163,10 +163,7 @@ const Home = () => {
                           {contest.contestName}
                         </h4>
                         <img
-                          src={`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${contest.photo.replace(
-                            /\\/g,
-                            "/"
-                          )}`}
+                          src={`https://2022.codeavour.org/wp-content/uploads/2022/08/Codeavour-2022-MainInternal.png`}
                           alt={contest.contestName}
                           className="mb-2 rounded-md shadow-sm w-full h-auto max-h-64 object-fill"
                         />
