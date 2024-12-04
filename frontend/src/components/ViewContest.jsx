@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import { AuthContext } from "./auth/AuthContext";
 import * as XLSX from "xlsx";
 import "./ViewContest.css";
+import axios from "axios";
 
 const ViewContest = () => {
   const [contest, setContest] = useState(null);
@@ -114,6 +115,7 @@ const ViewContest = () => {
 };
 
 const Leaderboard = ({ contest }) => {
+  const BASE_URL = import.meta.env.VITE_BACKEND_URL;
   const [rankings, setRankings] = useState([]);
   const [gradeRanges, setGradeRanges] = useState([]); // Stores ranges and grades entered by user
   const [showModal, setShowModal] = useState(false);
@@ -153,8 +155,128 @@ const Leaderboard = ({ contest }) => {
     const newGradeRanges = gradeRanges.filter((_, i) => i !== index);
     setGradeRanges(newGradeRanges);
   };
+  const  fetchUsersByRankings = async (rankings) => {
+    const userMap = new Map();
+  
+    try {
+      for (let i = 0; i < rankings.length; i++) {
+        const rank = rankings[i];
+        const email = rank.userEmail;
+        if (!userMap.has(email)) {
+          try{
+          const response = await axios.get(`${BASE_URL}/user?email=${email}`);
+          if (response.data) {
+            userMap.set(email, response.data);
+          }
+        }catch(e){
+          console.log(e);
+        }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  
+    return userMap;
+  };
 
-  const handleExportToExcel = () => {
+  const handleExportToExcel = async () => {
+
+    const userMap = await fetchUsersByRankings(rankings);
+    console.log(userMap);
+
+    const currentContestId =contest._id;
+    const acceptedSubmissionsMap = new Map();
+    rankings.forEach(ranking => {
+      const userDetails = userMap.get(ranking.userEmail);
+      if (userDetails) {
+        const problemMap = new Map();
+        userDetails.submissions.forEach(sub => {
+          if (sub.result === "ACC" && sub.contestId === currentContestId) {
+            const existingSubmission = problemMap.get(sub.problemIndex);
+            if (!existingSubmission || new Date(existingSubmission.dateTime) < new Date(sub.dateTime)) {
+              problemMap.set(sub.problemIndex, sub);
+            }
+          }
+        });
+        acceptedSubmissionsMap.set(ranking.userEmail,Array.from(problemMap.values()));
+      }
+    });
+    console.log(acceptedSubmissionsMap);
+
+    // Normalize and abstract code
+    const normalizeCode = (code, language) => {
+      const removeLanguageSpecifics = (code) => {
+        switch (language) {
+          case "cpp":
+            return code.replace(/#include.*/g, "").replace(/using\snamespace\sstd;/g, "");
+          case "python":
+            return code.replace(/import\s.*/g, "").replace(/def\s.*/g, "def FUNCTION");
+          default:
+            return code;
+        }
+      };
+
+      const normalized = removeLanguageSpecifics(code)
+        .replace(/\/\/.*|\/\*[\s\S]*?\*\//g, "") // Remove comments
+        .replace(/\s+/g, " ") // Remove extra spaces
+        .replace(/\b\w+\b/g, "VAR"); // Abstract variable names
+      return normalized;
+    };
+
+    // Compare submissions
+    const checkPlagiarism = (code1, code2) => {
+      const lcs = (a, b) => {
+        const dp = Array(a.length + 1)
+          .fill(0)
+          .map(() => Array(b.length + 1).fill(0));
+        for (let i = 1; i <= a.length; i++) {
+          for (let j = 1; j <= b.length; j++) {
+            if (a[i - 1] === b[j - 1]) dp[i][j] = dp[i - 1][j - 1] + 1;
+            else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+          }
+        }
+        return dp[a.length][b.length];
+      };
+
+      const normalized1 = normalizeCode(code1);
+      const normalized2 = normalizeCode(code2);
+      const similarity = (lcs(normalized1, normalized2) * 2) / (normalized1.length + normalized2.length);
+      return similarity > 0.85; // Threshold for plagiarism
+    };
+
+    const plagiarismResults = new Map();
+    acceptedSubmissionsMap.forEach((submissions, userEmail) => {
+      let isPlagiarized = false;
+      for (let i = 0; i < submissions.length; i++) {
+        const sub1 = submissions[i];
+        // Skip plagiarism check for the same user
+        for (let [otherUserEmail, otherSubmissions] of acceptedSubmissionsMap) {
+          if (userEmail !== otherUserEmail) { 
+            for (let j = 0; j < otherSubmissions.length; j++) {
+              const sub2 = otherSubmissions[j];
+              if (sub1.problemId === sub2.problemId) { // Same problem
+                if (checkPlagiarism(sub1.code, sub2.code)) {
+                  isPlagiarized = true;
+                  const plagiarismDetail = JSON.stringify({
+                    user1: { email: userEmail, code: sub1.code },
+                    user2: { email: otherUserEmail, code: sub2.code }
+                  });
+  
+                  plagiarismResults.set(userEmail, plagiarismDetail);
+                  break;
+                }
+              }
+            }
+          }
+          if (isPlagiarized) break;
+        }
+        if (isPlagiarized) break;
+      }
+    });
+  
+    console.log(plagiarismResults);
+
     const grades = new Array(rankings.length).fill("D"); //default grade
 
     gradeRanges.forEach((rangeObj) => {
@@ -174,6 +296,7 @@ const Leaderboard = ({ contest }) => {
       Score: ranking.score,
       "Last Submission Time": new Date(ranking.lastSubmissionTime).toLocaleString(),
       Grade: grades[index],
+      PotentialPlagiarism: plagiarismResults.get(ranking.userEmail)|| "No"
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -215,12 +338,14 @@ const Leaderboard = ({ contest }) => {
         </tbody>
       </table>
 
-      <button
+      {localStorage.getItem("role") ==="true" ? (<button
         onClick={() => setShowModal(true)}
         className="mt-4 relative inline-flex items-center justify-center px-10 py-4 bg-gray-800 text-white rounded-lg text-xl"
       >
         Export to Excel
-      </button>
+      </button>):
+      ("")
+      }
 
       {showModal && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
