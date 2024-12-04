@@ -116,10 +116,7 @@ const Dashboard = () => {
               {profilePhoto ? (
                 <>
                   <img
-                    src={`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${profilePhoto.replace(
-                      /\\/g,
-                      "/"
-                    )}`}
+                    src={`https://e7.pngegg.com/pngimages/592/884/png-clipart-programmer-computer-programming-computer-software-computer-icons-programming-language-avatar-heroes-computer.png`}
                     alt="Profile"
                     className="w-36 h-36 rounded-3xl border-2 border-gray-600"
                   />

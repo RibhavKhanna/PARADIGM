@@ -44,15 +44,15 @@ const ViewContest = () => {
           onClick={() => handleTabClick("details")}
           className={`mr-4 ${
             activeTab === "details" ? "font-bold" : ""
-          } btn shadow-[0_9px_0_rgb(0,0,0)] hover:shadow-[0_4px_0px_rgb(0,0,0)] text-black bg-cyan-400 ease-out hover:translate-y-1 transition-all rounded`}
+          } btn p-2 shadow-[0_9px_0_rgb(0,0,0)] hover:shadow-[0_4px_0px_rgb(0,0,0)] text-black bg-cyan-400 ease-in-out hover:translate-y-1 transition-all rounded`}
         >
-          Problems
+          All Problems
         </button>
         <button
           onClick={() => handleTabClick("leaderboard")}
           className={`${
             activeTab === "leaderboard" ? "font-bold" : ""
-          } btn shadow-[0_9px_0_rgb(0,0,0)] hover:shadow-[0_4px_0px_rgb(0,0,0)] text-black bg-orange-500 ease-out hover:translate-y-1 transition-all rounded`}
+          } btn p-2 shadow-[0_9px_0_rgb(0,0,0)] hover:shadow-[0_4px_0px_rgb(0,0,0)] text-black bg-orange-500 ease-in-out hover:translate-y-1 transition-all rounded`}
         >
           Leaderboard
         </button>
@@ -60,34 +60,36 @@ const ViewContest = () => {
 
       {activeTab === "details" && (
         <div className="text-white">
-          <h2 className="text-3xl font-bold mb-4 ">{contest.contestName}</h2>
-          <p>
-            <strong>Duration:</strong> {contest.duration}
-          </p>
-          <p>
-            <strong>Start Time:</strong>{" "}
-            {new Date(contest.startTime).toLocaleString("en-US", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
-          </p>
-          <p>
-            <strong>End Time:</strong>{" "}
-            {new Date(contest.endTime).toLocaleString("en-US", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
-          </p>
-          <p>
-            <strong>Created by:</strong> {contest.createdBy.username}
-          </p>
+          <h2 className="text-dark text-3xl font-bold mb-4" style={{color: 'white'}}>{contest.contestName}</h2>
+          <div className="pl-10">
+            <p>
+              <strong>Duration:</strong> {contest.duration}
+            </p>
+            <p>
+              <strong>Start Time:</strong>{" "}
+              {new Date(contest.startTime).toLocaleString("en-US", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </p>
+            <p>
+              <strong>End Time:</strong>{" "}
+              {new Date(contest.endTime).toLocaleString("en-US", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </p>
+            <p>
+              <strong>Created by:</strong> {contest.createdBy.username}
+            </p>
+          </div>
 
           <div className="mt-4 pl-10 pr-10">
-            <h2 className="text-xl font-semibold mb-2 text-white">Problems</h2>
+            <h2 className="text-xl font-semibold mb-2" style={{color: 'white'}}>Problems</h2>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-red-950">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-200 uppercase tracking-wider">
                     Name
                   </th>
                 </tr>
